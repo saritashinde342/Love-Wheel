@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Love Wheel - Spin for Romance</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 30px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 900px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h1 {
+            color: #764ba2;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .wheel-container {
+            position: relative;
+            width: 450px;
+            height: 450px;
+            margin: 0 auto 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .wheel {
+            width: calc(100% - 32px);
+            height: calc(100% - 32px);
+            border-radius: 50%;
+            position: relative;
+            transition: transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+            box-shadow: 
+                0 0 0 8px rgba(255, 255, 255, 0.3),
+                0 0 0 12px rgba(118, 75, 162, 0.3),
+                0 15px 50px rgba(0, 0, 0, 0.4);
+            border: 8px solid white;
+            background: white;
+        }
+
+        .wheel.spinning {
+            transition: transform 6s cubic-bezier(0.17, 0.67, 0.12, 0.99);
+        }
+
+        canvas {
+            border-radius: 50%;
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .pointer {
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-top: 40px solid #ff3366;
+            filter: drop-shadow(0 4px 12px rgba(255, 51, 102, 0.5));
+            z-index: 10;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: translateX(-50%) scale(1); }
+            50% { transform: translateX(-50%) scale(1.08); }
+        }
+
+        .center-circle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(135deg, #ff3366 0%, #ff6b9d 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            color: white;
+            font-weight: bold;
+            font-size: 1.3em;
+            box-shadow: 
+                0 8px 25px rgba(255, 51, 102, 0.5),
+                inset 0 -3px 10px rgba(0, 0, 0, 0.2);
+            z-index: 15;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 6px solid white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .center-circle:hover:not(.disabled) {
+            transform: translate(-50%, -50%) scale(1.08);
+            box-shadow: 
+                0 10px 35px rgba(255, 51, 102, 0.6),
+                inset 0 -3px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .center-circle:active:not(.disabled) {
+            transform: translate(-50%, -50%) scale(0.98);
+        }
+
+        .center-circle.disabled {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 1s ease-out;
+        }
+
+        .spin-text {
+            font-size: 1.4em;
+            letter-spacing: 1px;
+        }
+
+        .spin-icon {
+            font-size: 1.8em;
+            margin-top: 5px;
+            animation: rotate 3s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .result {
+            margin-top: 30px;
+            padding: 25px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border-radius: 20px;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .result-text {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background: #f0f;
+            position: absolute;
+            animation: confetti-fall 3s linear;
+        }
+
+        @keyframes confetti-fall {
+            to {
+                transform: translateY(100vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px 15px;
+                margin: 10px;
+            }
+
+            h1 {
+                font-size: 1.8em;
+                margin-bottom: 8px;
+            }
+
+            .subtitle {
+                font-size: 0.95em;
+                margin-bottom: 8px;
+            }
+
+            .wheel-container {
+                width: 320px;
+                height: 320px;
+                margin: 20px auto;
+            }
+
+            .wheel {
+                width: calc(100% - 24px);
+                height: calc(100% - 24px);
+                border: 6px solid white;
+                box-shadow: 
+                    0 0 0 6px rgba(255, 255, 255, 0.3),
+                    0 0 0 10px rgba(118, 75, 162, 0.3),
+                    0 10px 35px rgba(0, 0, 0, 0.4);
+            }
+
+            .pointer {
+                top: -20px;
+                border-left: 16px solid transparent;
+                border-right: 16px solid transparent;
+                border-top: 32px solid #ff3366;
+            }
+
+            .center-circle {
+                width: 90px;
+                height: 90px;
+                font-size: 0.9em;
+                border: 5px solid white;
+            }
+
+            .spin-text {
+                font-size: 1.2em;
+            }
+
+            .spin-icon {
+                font-size: 1.4em;
+                margin-top: 3px;
+            }
+
+            .result {
+                padding: 20px 15px;
+                min-height: 70px;
+            }
+
+            .result-text {
+                font-size: 1.4em;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 15px 10px;
+                border-radius: 20px;
+            }
+
+            h1 {
+                font-size: 1.6em;
+            }
+
+            .subtitle {
+                font-size: 0.85em;
+            }
+
+            .wheel-container {
+                width: 280px;
+                height: 280px;
+            }
+
+            .wheel {
+                width: calc(100% - 20px);
+                height: calc(100% - 20px);
+            }
+
+            .pointer {
+                top: -18px;
+                border-left: 14px solid transparent;
+                border-right: 14px solid transparent;
+                border-top: 28px solid #ff3366;
+            }
+
+            .center-circle {
+                width: 80px;
+                height: 80px;
+                font-size: 0.85em;
+                border: 4px solid white;
+            }
+
+            .spin-text {
+                font-size: 1.1em;
+            }
+
+            .spin-icon {
+                font-size: 1.3em;
+            }
+
+            .result {
+                padding: 18px 12px;
+                min-height: 60px;
+                border-radius: 15px;
+            }
+
+            .result-text {
+                font-size: 1.2em;
+            }
+        }
+
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .wheel-container {
+                width: 380px;
+                height: 380px;
+            }
+
+            .wheel {
+                width: calc(100% - 28px);
+                height: calc(100% - 28px);
+            }
+
+            .center-circle {
+                width: 100px;
+                height: 100px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>💕 Love Wheel 💕</h1>
+        <p class="subtitle">Let's check what you love the most!</p>
+
+        <div class="wheel-container">
+            <div class="pointer"></div>
+            <div class="wheel" id="wheel">
+                <canvas id="wheelCanvas"></canvas>
+            </div>
+            <div class="center-circle" onclick="spinWheel()">
+                <div class="spin-text">SPIN</div>
+                <div class="spin-icon">🎯</div>
+            </div>
+        </div>
+
+        <div class="result" id="result">
+            <div class="result-text">Click center button to begin! ✨</div>
+        </div>
+
+    </div>
+
+    <script>
+        const defaultItems = [
+            '💼 Job',
+            '👥 Friends',
+            '😴 Sleep',
+            '📱 Phone',
+            '👨‍👩‍👧‍👦 Relatives',
+            '💍 Your Wife',
+            '🏃 Exercise',
+            '📚 Reading',
+            '🎵 Music',
+            '🍳 Cooking'
+        ];
+
+        let items = [...defaultItems];
+        let isSpinning = false;
+        let currentRotation = 0;
+        let spinCount = 0;
+        const maxSpins = 3;
+
+        const colors = [
+            '#FF6B9D', '#C44569', '#FEA47F', '#F97F51',
+            '#58B19F', '#3B3B98', '#786FA6', '#F8B500',
+            '#EA8685', '#546DE5', '#E15F41', '#26C281'
+        ];
+
+        function drawWheel() {
+            const canvas = document.getElementById('wheelCanvas');
+            const wheel = document.getElementById('wheel');
+            const ctx = canvas.getContext('2d');
+            
+            // Get the actual display size from the wheel container
+            const displayWidth = wheel.offsetWidth;
+            const displayHeight = wheel.offsetHeight;
+            
+            // Set canvas internal resolution to match display size
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = displayWidth * dpr;
+            canvas.height = displayHeight * dpr;
+            
+            // Scale context to match device pixel ratio
+            ctx.scale(dpr, dpr);
+            
+            const centerX = displayWidth / 2;
+            const centerY = displayHeight / 2;
+            const radius = displayWidth / 2;
+
+            ctx.clearRect(0, 0, displayWidth, displayHeight);
+
+            const anglePerItem = (2 * Math.PI) / items.length;
+
+            items.forEach((item, index) => {
+                const startAngle = index * anglePerItem;
+                const endAngle = startAngle + anglePerItem;
+
+                // Draw segment with gradient
+                const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, radius);
+                gradient.addColorStop(0, colors[index % colors.length]);
+                gradient.addColorStop(1, adjustColor(colors[index % colors.length], -20));
+
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+                ctx.closePath();
+                ctx.fillStyle = gradient;
+                ctx.fill();
+
+                // Draw border
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 4;
+                ctx.stroke();
+
+                // Draw text - adjust font size based on canvas size
+                const fontSize = Math.max(14, Math.floor(displayWidth / 25));
+                ctx.save();
+                ctx.translate(centerX, centerY);
+                ctx.rotate(startAngle + anglePerItem / 2);
+                ctx.textAlign = 'right';
+                ctx.fillStyle = '#fff';
+                ctx.font = `bold ${fontSize}px Arial`;
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
+                ctx.shadowBlur = 5;
+                ctx.shadowOffsetX = 2;
+                ctx.shadowOffsetY = 2;
+                ctx.fillText(item, radius - 25, 6);
+                ctx.restore();
+            });
+        }
+
+        function adjustColor(color, amount) {
+            const clamp = (num) => Math.min(Math.max(num, 0), 255);
+            const num = parseInt(color.slice(1), 16);
+            const r = clamp((num >> 16) + amount);
+            const g = clamp(((num >> 8) & 0x00FF) + amount);
+            const b = clamp((num & 0x0000FF) + amount);
+            return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
+        }
+
+        function spinWheel() {
+            if (isSpinning || items.length === 0 || spinCount >= maxSpins) {
+                if (spinCount >= maxSpins) {
+                    showNotification('All 3 spins used! 💝');
+                }
+                return;
+            }
+
+            isSpinning = true;
+            spinCount++;
+
+            const wheel = document.getElementById('wheel');
+            const result = document.getElementById('result');
+            const centerButton = document.querySelector('.center-circle');
+
+            result.innerHTML = '<div class="result-text">Spinning... 🎡</div>';
+
+            // Find the index of "Your Wife"
+            const targetIndex = items.findIndex(item => item.includes('Your Wife'));
+            
+            if (targetIndex !== -1) {
+                // Calculate the angle for each segment
+                const anglePerItem = 360 / items.length;
+                
+                // Calculate the center angle of the target segment
+                const targetSegmentCenter = targetIndex * anglePerItem + (anglePerItem / 2);
+                
+                // The pointer is at the top (270 degrees in our coordinate system)
+                // We need to rotate the wheel so the target segment center aligns with 270 degrees
+                const pointerAngle = 270;
+                
+                // Calculate how much to rotate from current position
+                const normalizedCurrent = currentRotation % 360;
+                let targetRotation = pointerAngle - targetSegmentCenter;
+                
+                // Adjust to positive angle
+                if (targetRotation < 0) targetRotation += 360;
+                
+                // Add full spins for effect (5-6 full rotations)
+                const fullSpins = 5 + Math.floor(Math.random() * 2);
+                const totalRotation = (fullSpins * 360) + targetRotation - normalizedCurrent;
+                
+                currentRotation += totalRotation;
+            } else {
+                // Fallback: random spin if Your Wife not found
+                const spins = 5 + Math.random() * 5;
+                const extraDegrees = Math.random() * 360;
+                const totalRotation = spins * 360 + extraDegrees;
+                currentRotation += totalRotation;
+            }
+
+            wheel.style.transform = `rotate(${currentRotation}deg)`;
+            wheel.classList.add('spinning');
+
+            setTimeout(() => {
+                const winningItem = '💍 Your Wife'; // Always show Your Wife
+
+                // Check if this is the 3rd spin
+                if (spinCount === maxSpins) {
+                    result.innerHTML = `<div class="result-text">🎉 ${winningItem}! 🎉<br><br>✨ Some things are meant to be! 😊💖✨</div>`;
+                    // Hide the center button
+                    centerButton.classList.add('disabled');
+                } else {
+                    result.innerHTML = `<div class="result-text">🎉 ${winningItem}! 🎉<br><small style="font-size: 0.6em;">Spin ${spinCount}/${maxSpins}</small></div>`;
+                }
+                
+                createConfetti();
+
+                isSpinning = false;
+                wheel.classList.remove('spinning');
+            }, 6000);
+        }
+
+        function createConfetti() {
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.left = Math.random() * window.innerWidth + 'px';
+                    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.animationDelay = Math.random() * 0.5 + 's';
+                    document.body.appendChild(confetti);
+
+                    setTimeout(() => confetti.remove(), 3000);
+                }, i * 30);
+            }
+        }
+
+        function showNotification(message) {
+            const result = document.getElementById('result');
+            const originalContent = result.innerHTML;
+            result.innerHTML = `<div class="result-text">${message}</div>`;
+            
+            setTimeout(() => {
+                result.innerHTML = originalContent;
+            }, 2000);
+        }
+
+        // Initialize
+        drawWheel();
+
+        // Redraw wheel on window resize for responsive behavior
+        let resizeTimeout;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(function() {
+                drawWheel();
+            }, 250);
+        });
+    </script>
+</body>
+</html>
